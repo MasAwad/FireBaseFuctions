@@ -1,0 +1,50 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write, update: if request.auth.token.adminDegree > 1;
+    }
+    
+    match /reservations/{docID} {
+    	allow read, write, update : if request.auth.token.adminDegree == 1;
+    }
+    
+    match /doctors/{doctorID} {
+    allow read: if doctorID == 'all'
+    || request.auth.uid == doctorID 
+    || resource.data.clinicID == request.auth.token.clinicID
+    || request.auth.token.adminDegree == 1;
+    }
+    
+    
+    match /logs/{log} {
+      allow read, write: if request.auth.token.adminDegree == 1;
+      }
+    
+    match /clinics/{clinicID} {
+     allow read: if request.auth.token.clinicID == clinicID || request.auth.token.doctorClinic == clinicID;
+    }
+    
+    match /doctors/{doctorID} {
+    	allow read: if request.auth.uid == doctorID;
+    }
+    
+      match /radiations/{radiation} {
+      allow read;
+      
+    }
+    
+    match /clinics/{clinicID}/doctors/{doctorID} {
+     allow read, update: if request.auth.uid == doctorID;
+    }
+    
+    match /studies/{study} {
+    	allow read: if request.auth.token.adminDegree == 1 || request.auth.uid == resource.data.doctorID || request.auth.uid == study;
+      allow update, write: if request.auth.token.adminDegree == 1;
+    }
+  }
+  
+}
+
+
+
