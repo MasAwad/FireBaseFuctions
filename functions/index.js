@@ -99,35 +99,67 @@ exports.createDoctor = functions.https.onCall((data, context) => {
 
 exports.makeReservation = functions.https.onCall((data, context) => {
     console.log(data.birthDate);
+    // window.alert(' From makeReservation Function');
     
     return (async function() {
-        let radiations = [];
-        for(let i=0;i<data.radiations.length;i++) {
+        // console.log(data.doctor);
+        console.log(data);
 
-            let doc = await admin.firestore().collection('radiations').doc(data.radiations[i]).get();
-            if(!doc.exists) {
-                return {message: 'something went wrong'};
-            }
-            radiations.push(doc.data());
-        }
-        
-        await admin.firestore().collection('reservations').doc(data.phoneNumber).set({
+        if (data.type !=='inside'){
+
+        //     let radiations = [];
+        //     if (data.radiations.length != 0){
+        //     for(let i=0;i<data.radiations.length;i++) {
+
+        //         let doc = await admin.firestore().collection('radiations').doc(data.radiations[i]).get();
+        //         if(!doc.exists) {
+        //             return {message: 'something went wrong'};
+        //         }
+        //         radiations.push(doc.data());
+        //     }
+        // }
+         await admin.firestore().collection('reservations').doc(data.phoneNumber).set({
+             type: data.type,
             accepted: false,
             name: data.name,
             phoneNumber: data.phoneNumber,
-            suggestedDate: new Date(data.suggestedDate),
+                    // suggestedDate: new Date(data.suggestedDate),
             birthDate: data.birthDate ? new Date(data.birthDate) : null,
             date: null,
-            moneyToPay: null,
-            doctorEarns: null,
-            radiations: radiations,
+                    // moneyToPay: null,
+                    // doctorEarns: null,
+            radiations: data.radiations,
             doctor: data.doctor ? {
                 name: data.doctor.name,
                 id: data.doctor.id
-                } : null
+                        } : null               
         });
+        return {
+            ok: true,
+            reservation: 'outside' } ;
 
-        return {ok: true};
+    }else {    // The Reservation is from inside the Site
+        await admin.firestore().collection('reservations').doc(data.phoneNumber).set({
+            type: data.type,
+            accepted: true,
+            name: data.name,
+            phoneNumber: data.phoneNumber,
+            // suggestedDate: new Date(data.suggestedDate),
+            birthDate: data.birthDate ? new Date(data.birthDate) : null,
+            date: new Date(data.date),
+            moneyToPay: data.moneyToPay,
+            doctorEarns: data.doctorEarns,
+            radiations: data.radiations,
+            doctor: data.doctor ,
+            paid: data.paid ? data.paid : null ,
+            afterDiscount: data.afterDiscount ,
+            user: data.user 
+        });
+        return {
+            ok: true,
+            reservation: 'inside' } ;
+      }
+        
     })();
 });
 
