@@ -1,3 +1,5 @@
+// firebase emulators:start --import=./savedData --export-on-exit; 
+
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 
