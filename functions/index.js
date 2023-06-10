@@ -1,5 +1,6 @@
-// firebase emulators:start --import=./savedData --export-on-exit; 
-// firebase deploy --only functions
+// firebase emulators:start --import=./savedData --export-on-exit;
+// sudo  npm install -g firebase-tools
+// firebase deploy --only functions:closePatient
 
 // 1-download country list with country code, currency code and currency name what you require:
 // 2-convert it into csv.
@@ -72,7 +73,6 @@ const admin = require('firebase-admin');
 
 //             }
 //           }
-
 // ---------------------- END -----------------------------
 async function createPatientAccount(phoneNumber) {
     let code = Math.floor(Math.random()*100000);
@@ -91,14 +91,13 @@ async function createPatientAccount(phoneNumber) {
         //     uid: `${code}`,
         //     password: `${password}`,
         //     disabled: false,
-
         // });
         // return [patient, password, code];
         return code;
     }catch(e){
         console.log(e.message);
         console.log("No Patient Created ... ");
-        return await createPatientAccount(); // an account exists with this code
+        return await createPatientAccount(phoneNumber); // an account exists with this code
     }
 }
 // ------------------ docEARN start 
@@ -108,7 +107,9 @@ async function docEARN(reservation){
     
         if (docData.exists){
             // docData.data();
-            let waseet = {...docData.data()};
+            let waseet ;
+            // waseet = { ...docData.data()};
+            waseet = docData.data();
             let newEarn;
             newEarn = docData.data().earns.value[0] + reservation.paid ;
             // docData.data().earns.value[0] =  newEarn;
@@ -116,22 +117,25 @@ async function docEARN(reservation){
             // console.log("docData.data().earns.value[0] >> "+ docData.data().earns.value[0]);
             // console.log("waseet.earns.value[0] >> " + waseet.earns.value[0]);
             return waseet.earns ;
-        }else {
-            console.log("NO Doctor Data Returned");
+        }
+        else {
+            // console.log("NO Doctor Data Returned");
             return null ;
         }
     }catch (e ){
         console.log(e.message);
          }
       
-//    return docData;
+   return docData;
 }
   // ------------------- docEARN End 
 exports.closePatient = functions.https.onCall(
   (reservation, context) => {
-    console.log("DateString >> " + reservation.closedDate);
-    console.log("reservation.date >> " + new Date(reservation.date.seconds*1000));
-    console.log("New DateFunc >> " + new Date(reservation.closedDate));
+    
+    if(!context.auth.token.adminDegree) return {message: 'access denied'};
+        // console.log("DateString >> " + reservation.closedDate);
+        // console.log("reservation.date >> " + new Date(reservation.date.seconds*1000));
+        // console.log("New DateFunc >> " + new Date(reservation.closedDate));
     const getCurrenDate = (currentDate)=>{
        
         const currDay = (currentDate.getDate()< 10 ? '0' +currentDate.getDate() : currentDate.getDate()).toString();
@@ -147,7 +151,7 @@ exports.closePatient = functions.https.onCall(
     const getBalance = async (paid,currentDate) => {
         const fullDate= getCurrenDate(currentDate);
         console.log("fullDate >> " + fullDate);
-    try{
+        try{
             const pointBalance = await admin.firestore().collection('point1').doc(fullDate).get();
             if (pointBalance.exists){
                 console.log('the Blanance is >>> ' + pointBalance.data().balance);
@@ -178,7 +182,7 @@ exports.closePatient = functions.https.onCall(
                 console.log(e.message);
                 }
     }
-    if(!context.auth.token.adminDegree) return {message: 'access denied'};
+    
     // if(reservation.doctor.id > 0 ) {
         
     //             }
@@ -191,6 +195,7 @@ exports.closePatient = functions.https.onCall(
             .where('phoneNumber', '==', reservation.phoneNumber).get();
             let code ;
         if(patientData.docs.length === 0) {
+
             code = await createPatientAccount(reservation.phoneNumber);
             // return {patientCode: `${code}`, password: reservation.phoneNumber, isFirstTime: true};
             await admin.firestore().collection('studies').doc(`${code}`).set({
@@ -230,7 +235,7 @@ exports.closePatient = functions.https.onCall(
 
             const newDocEarns = await docEARN(reservation);
             // console.log(newDocData);
-            if (newDocEarns != null)
+            if (newDocEarns !== null)
             {
                 await admin.firestore().collection('doctors').doc(reservation.doctor.id).update(
                     {
@@ -239,9 +244,7 @@ exports.closePatient = functions.https.onCall(
                     earns: newDocEarns ,
                   }
                   );
-            }
-            // if(!context.auth.token.adminDegree) return {message: 'access denied'};
-            
+            }            
         
         await admin.firestore().collection('logs').doc().set({
             // code: parseInt(res.data.patientCode),
@@ -255,7 +258,7 @@ exports.closePatient = functions.https.onCall(
             studyName: reservation.name ,
             radiations: reservation.radiations.map(r => r.name),
             totalPaied: reservation.moneyToPay ,
-            totalRecieved: reservation.paid == null || reservation.paid == undefined ? 0 : reservation.paid,
+            totalRecieved: reservation.paid === null || reservation.paid === undefined ? 0 : reservation.paid,
             user: reservation.user ,
                         });
         getBalance(reservation.paid,new Date(reservation.date.seconds*1000));
@@ -265,12 +268,12 @@ exports.closePatient = functions.https.onCall(
      // getBalance(reservation.paid,reservation.closedDate);
     
      // return {ok: true, patientCode: patientData.docs[0].id};
-     console.log("CODE >> " + code);61394
-     console.log("ClosedDate >> " + new Date(reservation.closedDate))
+    //  console.log("CODE >> " + code);61394
+    //  console.log("ClosedDate >> " + new Date(reservation.closedDate))
      return {ok: true, patientCode:code};
         
     }
-      )();
+ )();
   
   });
 
