@@ -16,12 +16,15 @@
 // 12-now it is great!!!!!!! cheers!
 
 
+
+
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 // const { initializeApp } = require('firebase-admin/app');
 // const { getAuth } = require('firebase-admin/auth');
 
-  admin.initializeApp();
+
+admin.initializeApp();
 //   const app = initializeApp(firebaseConfig);
 //   const auth = getAuth(app);
 
@@ -74,6 +77,7 @@ const admin = require('firebase-admin');
 //             }
 //           }
 // ---------------------- END -----------------------------
+
 async function createPatientAccount(phoneNumber) {
     let code = Math.floor(Math.random()*100000);
     // let password = Math.floor(1000000+Math.random()*1000000);
